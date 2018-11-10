@@ -2,13 +2,12 @@ package br.com.caelum.jms;
 
 import java.util.Scanner;
 
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
-import javax.jms.Queue;
-import javax.jms.QueueConnection;
-import javax.jms.QueueConnectionFactory;
-import javax.jms.QueueReceiver;
-import javax.jms.QueueSession;
+import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -17,22 +16,25 @@ public class TesteConsumidor {
 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws NamingException, JMSException {
-        InitialContext ctx = new InitialContext();
-        QueueConnectionFactory cf = (QueueConnectionFactory)ctx.lookup("ConnectionFactory");
-        QueueConnection conexao = cf.createQueueConnection();
-        conexao.start();
+		InitialContext context = new InitialContext();
+		
+		ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("ConnectionFactory");
+		
+		Connection connection = connectionFactory.createConnection();
+		connection.start();
+		
+		Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+		
+		Destination destination = (Destination) context.lookup("financeiro");
+		MessageConsumer consumer = session.createConsumer(destination);
+		
+		Message message = consumer.receive();
+		System.out.println("Mensagem recebida: [" + message + "]");
 
-        QueueSession sessao = conexao.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue fila = (Queue) ctx.lookup("financeiro");
-        QueueReceiver receiver = (QueueReceiver) sessao.createReceiver(fila );
-
-        Message message = receiver.receive();
-        System.out.println(message);
-
-        new Scanner(System.in).nextLine();
-
-        sessao.close();
-        conexao.close();    
-        ctx.close();
+		new Scanner(System.in).nextLine();
+		
+		session.close();
+		connection.close();
+		context.close();
 	}
 }
