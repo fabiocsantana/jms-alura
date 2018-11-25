@@ -12,37 +12,33 @@ import javax.jms.MessageListener;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
-import org.w3c.dom.Text;
-
-public class TesteConsumidor {
+public class TesteConsumidorDLQ {
 
 	@SuppressWarnings("resource")
-	public static void main(String[] args) throws NamingException, JMSException {
+	public static void main(String[] args) throws Exception {
+		
 		InitialContext context = new InitialContext();
+		ConnectionFactory factory = (ConnectionFactory) context.lookup("ConnectionFactory");
 		
-		ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("ConnectionFactory");
-		
-		Connection connection = connectionFactory.createConnection();
+		Connection connection = factory.createConnection(); 
 		connection.start();
-		
 		Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 		
-		Destination destination = (Destination) context.lookup("financeiro");
-		MessageConsumer consumer = session.createConsumer(destination);
+		Destination fila = (Destination) context.lookup("DLQ");
+		MessageConsumer consumer = session.createConsumer(fila );
 		
 		consumer.setMessageListener(new MessageListener() {
-			public void onMessage(Message message) {
-				TextMessage textMessage = (TextMessage) message;
-				try {
-					System.out.println(textMessage.getText());
-				} catch (JMSException e) {
-					e.printStackTrace();
-				}
-			}
-		});
 
+			@Override
+			public void onMessage(Message message) {
+
+				System.out.println(message);
+			}
+			
+		});
+		
+				
 		new Scanner(System.in).nextLine();
 		
 		session.close();
